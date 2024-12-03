@@ -3,11 +3,40 @@
 namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use App\Repository\CategoryRepository;
 use Doctrine\ORM\Mapping as ORM;
-use App\Entity\Category;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ApiResource()
+ * @ApiResource(
+ *      security="is_granted('ROLE_USER')",
+ *      openapiContext={
+ *          "security"={
+ *              {"bearerAuth"={}}
+ *          }
+ *      },
+ *      collectionOperations={
+ *          "get"={
+ *              "security" = "is_granted('ROLE_USER')",
+ *          },
+ *          "post"= {
+ *              "method" = "POST",
+ *              "denormalization_context"={"groups"={"recipe:write"}},
+ *          }
+ *      },
+ *     itemOperations={
+ *         "get"={
+ *             "security" = "(is_granted('ROLE_USER')",
+ *         },
+ *         "put"={
+ *             "security" = "(is_granted('ROLE_USER') and object.getAuthor() == user) or is_granted('ROLE_ADMIN')",
+ *         },
+ *         "delete"={
+ *             "security" = "(is_granted('ROLE_USER') and object.getAuthor() == user) or is_granted('ROLE_ADMIN')",
+ *          }
+ *     },
+ *      normalizationContext={"groups"={"recipe:read"}},
+ *      denormalizationContext={"groups"={"recipe:write"}})
  * @ORM\Entity
  */
 class Recipe
@@ -21,28 +50,33 @@ class Recipe
 
     /**
      * @ORM\Column(type="string", length=100)
+     * @Groups({"recipe:read", "recipe:write"})
      */
     private $title;
 
     /**
      * @ORM\Column(type="text", nullable=true)
+     * @Groups({"recipe:read", "recipe:write"})
      */
     private $description;
 
     /**
      * @ORM\ManyToOne(targetEntity=Category::class)
      * @ORM\JoinColumn(nullable=false)
+     * @Groups({"recipe:read", "recipe:write"})
      */
-    private $category;
+    private ?Category $category = null;
 
     /**
      * @ORM\ManyToOne(targetEntity=User::class)
      * @ORM\JoinColumn(nullable=false)
+     * @Groups({"recipe:read", "recipe:write"})
      */
     private $author;
 
     /**
      * @ORM\Column(type="datetime", options={"default": "CURRENT_TIMESTAMP"})
+     * @Groups({"recipe:read"})
      */
     private $createdAt;
 
@@ -92,8 +126,12 @@ class Recipe
         return $this->category;
     }
 
-    public function setCategory(Category $category): self
+    public function setCategory($category): self
     {
+        if (is_numeric($category)) {
+            $repository = new CategoryRepository();
+            $category = $repository->find($category);
+        }
         $this->category = $category;
         return $this;
     }
