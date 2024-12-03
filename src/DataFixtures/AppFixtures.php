@@ -28,7 +28,7 @@ class AppFixtures extends Fixture
         $user = new User();
         $user->setUsername('musso')
             ->setEmail('musso@localhost.fr')
-            ->setRoles(['ROLE_ADMIN']);
+            ->setRoles(['ROLE_ADMIN', 'ROLE_USER']);
 
         // Récupérer le mot de passe du formulaire ou autre source
         $plainPassword = 'musso_password';
